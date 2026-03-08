@@ -1,0 +1,60 @@
+import streamlit as st
+import pandas as pd
+import nltk
+from nltk.corpus import stopwords
+import string
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+
+# Sample dataset
+data = {
+"feedback":[
+"The teacher explains clearly",
+"Too many assignments",
+"The classroom environment is good",
+"Lecture is boring",
+"Course material is helpful"
+],
+"sentiment":[
+"positive",
+"negative",
+"positive",
+"negative",
+"positive"
+]
+}
+
+df = pd.DataFrame(data)
+
+# Clean text
+stop_words = set(stopwords.words('english'))
+
+def clean_text(text):
+    text = text.lower()
+    text = ''.join([char for char in text if char not in string.punctuation])
+    words = text.split()
+    words = [word for word in words if word not in stop_words]
+    return " ".join(words)
+
+df["clean_feedback"] = df["feedback"].apply(clean_text)
+
+# TF-IDF
+vectorizer = TfidfVectorizer()
+X = vectorizer.fit_transform(df["clean_feedback"])
+y = df["sentiment"]
+
+# Train model
+model = MultinomialNB()
+model.fit(X,y)
+
+# Website UI
+st.title("Student Feedback Sentiment Analyzer")
+
+user_input = st.text_area("Enter Student Feedback")
+
+if st.button("Analyze"):
+    clean = clean_text(user_input)
+    vector = vectorizer.transform([clean])
+    result = model.predict(vector)
+
+    st.write("Predicted Sentiment:", result[0])
